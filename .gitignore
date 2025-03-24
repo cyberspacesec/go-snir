@@ -1,5 +1,6 @@
 # 二进制文件
 /go-web-screenshot
+/go-snir
 *.exe
 *.exe~
 *.dll

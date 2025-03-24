@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -12,8 +13,8 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
 
-	"github.com/cyberspacesec/go-web-screenshot/pkg/log"
-	"github.com/cyberspacesec/go-web-screenshot/pkg/models"
+	"github.com/cyberspacesec/go-snir/pkg/log"
+	"github.com/cyberspacesec/go-snir/pkg/models"
 )
 
 // ChromeDP implements the Driver interface using chromedp
@@ -53,6 +54,11 @@ func NewChromeDP(opts *Options) (*ChromeDP, error) {
 	// 设置Chrome路径
 	if opts.Chrome.Path != "" {
 		chromedpOpts = append(chromedpOpts, chromedp.ExecPath(opts.Chrome.Path))
+	}
+
+	// 忽略证书错误
+	if opts.Chrome.IgnoreCertErrors {
+		chromedpOpts = append(chromedpOpts, chromedp.Flag("ignore-certificate-errors", true))
 	}
 
 	// 创建Chrome上下文
@@ -98,25 +104,283 @@ func (c *ChromeDP) Witness(target string, runner *Runner) (*models.Result, error
 		}
 	})
 
-	// 执行截图任务
-	var buf []byte
-	var htmlContent string
-	var title string
-	var responseCode int
-	var cookies []*network.Cookie
-
+	// 准备任务序列
 	tasks := []chromedp.Action{
 		network.Enable(),
-		chromedp.Navigate(target),
 	}
+
+	// 设置Cookie
+	if len(c.opts.Scan.Cookies) > 0 {
+		for _, cookie := range c.opts.Scan.Cookies {
+			cookieParam := network.SetCookie(cookie.Name, cookie.Value)
+			if cookie.Domain != "" {
+				cookieParam = cookieParam.WithDomain(cookie.Domain)
+			}
+			if cookie.Path != "" {
+				cookieParam = cookieParam.WithPath(cookie.Path)
+			}
+			cookieParam = cookieParam.WithSecure(cookie.Secure)
+			cookieParam = cookieParam.WithHTTPOnly(cookie.HttpOnly)
+			tasks = append(tasks, cookieParam)
+		}
+	}
+
+	// 加载前执行JavaScript
+	if c.opts.Scan.RunJSBefore && c.opts.Scan.JavaScript != "" {
+		tasks = append(tasks, chromedp.Evaluate(c.opts.Scan.JavaScript, nil))
+	}
+
+	// 添加指纹伪装脚本
+	if c.opts.Chrome.Platform != "" || c.opts.Chrome.Vendor != "" ||
+		len(c.opts.Chrome.Plugins) > 0 || c.opts.Chrome.WebGLVendor != "" ||
+		c.opts.Chrome.WebGLRenderer != "" || c.opts.Chrome.SpoofScreenSize {
+
+		// 构建指纹伪装脚本
+		fingerprintJS := "(() => {"
+
+		// 修改navigator.platform
+		if c.opts.Chrome.Platform != "" {
+			fingerprintJS += fmt.Sprintf(`
+				Object.defineProperty(navigator, 'platform', {
+					get: function() { return '%s'; }
+				});`, c.opts.Chrome.Platform)
+		}
+
+		// 修改vendor
+		if c.opts.Chrome.Vendor != "" {
+			fingerprintJS += fmt.Sprintf(`
+				Object.defineProperty(navigator, 'vendor', {
+					get: function() { return '%s'; }
+				});`, c.opts.Chrome.Vendor)
+		}
+
+		// 修改plugins
+		if len(c.opts.Chrome.Plugins) > 0 {
+			pluginsJSON, _ := json.Marshal(c.opts.Chrome.Plugins)
+			fingerprintJS += fmt.Sprintf(`
+				Object.defineProperty(navigator, 'plugins', {
+					get: function() { return %s; }
+				});`, string(pluginsJSON))
+		}
+
+		// WebGL相关
+		if c.opts.Chrome.WebGLVendor != "" || c.opts.Chrome.WebGLRenderer != "" {
+			fingerprintJS += `
+				const getParameter = WebGLRenderingContext.prototype.getParameter;
+				WebGLRenderingContext.prototype.getParameter = function(parameter) {
+			`
+
+			if c.opts.Chrome.WebGLVendor != "" {
+				fingerprintJS += fmt.Sprintf(`
+					if (parameter === 37445) {
+						return '%s';
+					}`, c.opts.Chrome.WebGLVendor)
+			}
+
+			if c.opts.Chrome.WebGLRenderer != "" {
+				fingerprintJS += fmt.Sprintf(`
+					if (parameter === 37446) {
+						return '%s';
+					}`, c.opts.Chrome.WebGLRenderer)
+			}
+
+			fingerprintJS += `
+					return getParameter.call(this, parameter);
+				};`
+		}
+
+		// 屏幕尺寸
+		if c.opts.Chrome.SpoofScreenSize && c.opts.Chrome.ScreenWidth > 0 && c.opts.Chrome.ScreenHeight > 0 {
+			fingerprintJS += fmt.Sprintf(`
+				Object.defineProperty(window, 'screen', {
+					get: function() {
+						return {
+							width: %d,
+							height: %d,
+							availWidth: %d,
+							availHeight: %d,
+							colorDepth: 24,
+							pixelDepth: 24
+						};
+					}
+				});`, c.opts.Chrome.ScreenWidth, c.opts.Chrome.ScreenHeight,
+				c.opts.Chrome.ScreenWidth, c.opts.Chrome.ScreenHeight)
+		}
+
+		// WebRTC
+		if c.opts.Chrome.DisableWebRTC {
+			fingerprintJS += `
+				// 禁用WebRTC
+				Object.defineProperty(window, 'RTCPeerConnection', {
+					value: undefined
+				});
+				Object.defineProperty(window, 'webkitRTCPeerConnection', {
+					value: undefined
+				});`
+		}
+
+		fingerprintJS += "})();"
+
+		// 执行指纹伪装脚本
+		tasks = append(tasks, chromedp.Evaluate(fingerprintJS, nil))
+	}
+
+	// 页面导航
+	tasks = append(tasks, chromedp.Navigate(target))
 
 	// 添加延迟
 	if c.opts.Chrome.Delay > 0 {
 		tasks = append(tasks, chromedp.Sleep(time.Duration(c.opts.Chrome.Delay)*time.Second))
 	}
 
+	// 处理交互操作
+	if len(c.opts.Scan.Actions) > 0 {
+		for _, action := range c.opts.Scan.Actions {
+			// 确定选择方式
+			var sel interface{}
+			var by chromedp.QueryOption
+
+			if action.Selector != "" {
+				sel = action.Selector
+				by = chromedp.ByQuery
+			} else if action.XPath != "" {
+				sel = action.XPath
+				by = chromedp.BySearch
+			} else {
+				continue
+			}
+
+			// 根据操作类型执行不同动作
+			switch action.Type {
+			case "click":
+				tasks = append(tasks, chromedp.Click(sel, by))
+			case "type":
+				tasks = append(tasks, chromedp.SendKeys(sel, action.Value, by))
+			case "scroll":
+				scrollJS := fmt.Sprintf(`
+					const el = document.querySelector("%s");
+					if(el) { el.scrollBy(0, %s); }
+				`, action.Selector, action.Value)
+				tasks = append(tasks, chromedp.Evaluate(scrollJS, nil))
+			case "wait":
+				if action.WaitVisible {
+					tasks = append(tasks, chromedp.WaitVisible(sel, by))
+				} else {
+					waitTime := 1000
+					if action.WaitTime > 0 {
+						waitTime = action.WaitTime
+					}
+					tasks = append(tasks, chromedp.Sleep(time.Duration(waitTime)*time.Millisecond))
+				}
+			case "hover":
+				if action.Selector != "" {
+					hoverJS := fmt.Sprintf(`
+						(function() {
+							const element = document.querySelector("%s");
+							if (element) {
+								const mouseoverEvent = new MouseEvent('mouseover', {
+									bubbles: true,
+									cancelable: true,
+									view: window
+								});
+								element.dispatchEvent(mouseoverEvent);
+								return true;
+							}
+							return false;
+						})()`, action.Selector)
+					tasks = append(tasks, chromedp.Evaluate(hoverJS, nil))
+				} else if action.XPath != "" {
+					hoverJS := fmt.Sprintf(`
+						(function() {
+							const result = document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+							const element = result.singleNodeValue;
+							if (element) {
+								const mouseoverEvent = new MouseEvent('mouseover', {
+									bubbles: true,
+									cancelable: true,
+									view: window
+								});
+								element.dispatchEvent(mouseoverEvent);
+								return true;
+							}
+							return false;
+						})()`, action.XPath)
+					tasks = append(tasks, chromedp.Evaluate(hoverJS, nil))
+				}
+			}
+		}
+	}
+
+	// 表单填充
+	if len(c.opts.Scan.Form.Fields) > 0 {
+		// 填充每个字段
+		for _, field := range c.opts.Scan.Form.Fields {
+			var sel interface{}
+			var by chromedp.QueryOption
+
+			if field.Selector != "" {
+				sel = field.Selector
+				by = chromedp.ByQuery
+			} else if field.XPath != "" {
+				sel = field.XPath
+				by = chromedp.BySearch
+			} else {
+				continue
+			}
+
+			// 根据字段类型处理
+			switch field.Type {
+			case "checkbox", "radio":
+				tasks = append(tasks, chromedp.Click(sel, by))
+			case "select":
+				tasks = append(tasks, chromedp.SendKeys(sel, field.Value, by))
+			default: // input
+				// 先清空字段内容
+				tasks = append(tasks, chromedp.Clear(sel, by))
+				// 再填充新值
+				tasks = append(tasks, chromedp.SendKeys(sel, field.Value, by))
+			}
+		}
+
+		// 提交表单
+		if c.opts.Scan.Form.SubmitSelector != "" || c.opts.Scan.Form.SubmitXPath != "" {
+			var submitSel interface{}
+			var by chromedp.QueryOption
+
+			if c.opts.Scan.Form.SubmitSelector != "" {
+				submitSel = c.opts.Scan.Form.SubmitSelector
+				by = chromedp.ByQuery
+			} else {
+				submitSel = c.opts.Scan.Form.SubmitXPath
+				by = chromedp.BySearch
+			}
+
+			// 点击提交按钮
+			tasks = append(tasks, chromedp.Click(submitSel, by))
+
+			// 提交后等待
+			if c.opts.Scan.Form.WaitAfterSubmit > 0 {
+				tasks = append(tasks, chromedp.Sleep(time.Duration(c.opts.Scan.Form.WaitAfterSubmit)*time.Millisecond))
+			} else {
+				// 默认等待1秒
+				tasks = append(tasks, chromedp.Sleep(1*time.Second))
+			}
+		}
+	}
+
+	// 加载后执行JavaScript
+	if c.opts.Scan.RunJSAfter && c.opts.Scan.JavaScript != "" {
+		tasks = append(tasks, chromedp.Evaluate(c.opts.Scan.JavaScript, nil))
+	}
+
 	// 获取页面信息
-	tasks = append(tasks, 
+	var buf []byte
+	var htmlContent string
+	var title string
+	var responseCode int
+	var cookies []*network.Cookie
+
+	tasks = append(tasks,
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			// 获取响应码
 			var statusCode int
@@ -145,8 +409,22 @@ func (c *ChromeDP) Witness(target string, runner *Runner) (*models.Result, error
 			cookies, err = network.GetCookies().Do(ctx)
 			return err
 		}),
-		chromedp.CaptureScreenshot(&buf),
 	)
+
+	// 根据不同的选择方式截图
+	if c.opts.Scan.Selector != "" {
+		// 使用CSS选择器截图
+		tasks = append(tasks, chromedp.Screenshot(c.opts.Scan.Selector, &buf, chromedp.ByQuery))
+	} else if c.opts.Scan.XPath != "" {
+		// 使用XPath截图
+		tasks = append(tasks, chromedp.Screenshot(c.opts.Scan.XPath, &buf, chromedp.BySearch))
+	} else if c.opts.Scan.CaptureFullPage {
+		// 捕获完整页面（包括滚动部分）
+		tasks = append(tasks, chromedp.FullScreenshot(&buf, 100))
+	} else {
+		// 默认捕获可视区域
+		tasks = append(tasks, chromedp.CaptureScreenshot(&buf))
+	}
 
 	// 执行任务
 	err := chromedp.Run(c.ctx, tasks...)
@@ -163,12 +441,12 @@ func (c *ChromeDP) Witness(target string, runner *Runner) (*models.Result, error
 
 	// 保存截图
 	if !c.opts.Scan.ScreenshotSkipSave {
-		filename := fmt.Sprintf("%s_%s.%s", 
-			strings.ReplaceAll(target, "/", "_"), 
-			time.Now().Format("20060102150405"), 
+		filename := fmt.Sprintf("%s_%s.%s",
+			strings.ReplaceAll(target, "/", "_"),
+			time.Now().Format("20060102150405"),
 			c.opts.Scan.ScreenshotFormat)
 		filepath := filepath.Join(c.opts.Scan.ScreenshotPath, filename)
-		
+
 		err = ioutil.WriteFile(filepath, buf, 0644)
 		if err != nil {
 			log.Error("保存截图失败", "error", err)

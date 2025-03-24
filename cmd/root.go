@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/cyberspacesec/go-web-screenshot/internal/ascii"
-	"github.com/cyberspacesec/go-web-screenshot/pkg/log"
-	"github.com/cyberspacesec/go-web-screenshot/pkg/runner"
+	"github.com/cyberspacesec/go-snir/pkg/ascii"
+	"github.com/cyberspacesec/go-snir/pkg/log"
+	"github.com/cyberspacesec/go-snir/pkg/runner"
 )
 
 var (
@@ -20,7 +20,7 @@ func init() {
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "go-web-screenshot",
+	Use:   "go-snir",
 	Short: "一个网页截图和信息收集工具",
 	Long:  ascii.Logo(),
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

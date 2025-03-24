@@ -8,9 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/cyberspacesec/go-web-screenshot/internal/islazy"
-	"github.com/cyberspacesec/go-web-screenshot/pkg/log"
-	"github.com/cyberspacesec/go-web-screenshot/pkg/models"
+	"github.com/cyberspacesec/go-snir/pkg/database"
+	"github.com/cyberspacesec/go-snir/pkg/islazy"
+	"github.com/cyberspacesec/go-snir/pkg/log"
+	"github.com/cyberspacesec/go-snir/pkg/models"
 )
 
 // JSONLWriter implements the Writer interface for JSONL files
@@ -180,6 +181,24 @@ func (w *StdoutWriter) Close() error {
 func CreateWriters(opts *Options) ([]Writer, error) {
 	var writers []Writer
 
+	// 创建数据库写入器
+	if opts.DB.Enable {
+		dbOptions := database.Options{
+			Path: opts.DB.Path,
+		}
+
+		// 创建数据库连接
+		db, err := database.NewDB(dbOptions)
+		if err != nil {
+			return nil, fmt.Errorf("创建数据库连接失败: %v", err)
+		}
+
+		// 创建数据库写入器
+		dbWriter := database.NewDBWriter(db)
+		writers = append(writers, dbWriter)
+		log.Debug("已创建数据库写入器", "path", dbOptions.Path)
+	}
+
 	// 创建JSONL写入器
 	if opts.Writer.Jsonl {
 		filePath := opts.Writer.JsonlFile
@@ -215,8 +234,6 @@ func CreateWriters(opts *Options) ([]Writer, error) {
 		writers = append(writers, NewStdoutWriter())
 		log.Debug("已创建标准输出写入器")
 	}
-
-	// TODO: 实现数据库写入器
 
 	return writers, nil
 }

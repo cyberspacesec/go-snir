@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/cyberspacesec/go-web-screenshot/pkg/log"
+	"github.com/cyberspacesec/go-snir/pkg/log"
 )
 
 var reportCmd = &cobra.Command{

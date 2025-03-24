@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/cyberspacesec/go-web-screenshot/pkg/log"
+	"github.com/cyberspacesec/go-snir/pkg/log"
 )
 
 var scanCmd = &cobra.Command{
@@ -43,6 +43,23 @@ func init() {
 	scanCmd.PersistentFlags().IntVar(&opts.Scan.MaxRetries, "max-retries", 1, "最大重试次数")
 	scanCmd.PersistentFlags().StringVar(&opts.Scan.JavaScript, "js", "", "要在页面上执行的JavaScript代码")
 	scanCmd.PersistentFlags().StringVar(&opts.Scan.JavaScriptFile, "js-file", "", "包含JavaScript代码的文件路径")
+
+	// 数据库相关选项
+	scanCmd.PersistentFlags().BoolVar(&opts.DB.Enable, "db", false, "启用数据库存储")
+	scanCmd.PersistentFlags().StringVar(&opts.DB.Path, "db-path", "go-web-screenshot.db", "数据库文件路径")
+
+	// 输出相关选项
+	scanCmd.PersistentFlags().BoolVar(&opts.Writer.Jsonl, "write-jsonl", false, "写入JSONL格式结果")
+	scanCmd.PersistentFlags().StringVar(&opts.Writer.JsonlFile, "jsonl-file", "results.jsonl", "JSONL结果文件路径")
+	scanCmd.PersistentFlags().BoolVar(&opts.Writer.Csv, "write-csv", false, "写入CSV格式结果")
+	scanCmd.PersistentFlags().StringVar(&opts.Writer.CsvFile, "csv-file", "results.csv", "CSV结果文件路径")
+	scanCmd.PersistentFlags().BoolVar(&opts.Writer.Stdout, "write-stdout", true, "输出结果到控制台")
+
+	// 添加黑名单相关选项
+	scanCmd.PersistentFlags().BoolVar(&opts.Scan.EnableBlacklist, "enable-blacklist", true, "启用URL黑名单检查")
+	scanCmd.PersistentFlags().BoolVar(&opts.Scan.DefaultBlacklist, "default-blacklist", true, "使用默认黑名单规则")
+	scanCmd.PersistentFlags().StringSliceVar(&opts.Scan.BlacklistPatterns, "blacklist-pattern", []string{}, "添加自定义黑名单规则 (可多次使用)")
+	scanCmd.PersistentFlags().StringVar(&opts.Scan.BlacklistFile, "blacklist-file", "", "黑名单规则文件路径")
 
 	log.Debug("已注册scan命令")
 }

@@ -1,7 +1,11 @@
 package cmd
 
+import (
+	"github.com/cyberspacesec/go-snir/pkg/api"
+)
+
 // 应用单个截图请求的配置选项
-func applyScreenshotOptions(req *ScreenshotRequest) {
+func applyScreenshotOptions(req *api.ScreenshotRequest) {
 	// 应用HTTP/HTTPS选项
 	if req.HTTP {
 		opts.Scan.HTTP = true
@@ -26,7 +30,7 @@ func applyScreenshotOptions(req *ScreenshotRequest) {
 }
 
 // 应用批量截图请求的配置选项
-func applyBatchScreenshotOptions(req *BatchScreenshotRequest) {
+func applyBatchScreenshotOptions(req *api.BatchScreenshotRequest) {
 	// 应用HTTP/HTTPS选项
 	if req.HTTP {
 		opts.Scan.HTTP = true

@@ -3,7 +3,7 @@ package runner
 import (
 	"fmt"
 
-	"github.com/cyberspacesec/go-web-screenshot/pkg/models"
+	"github.com/cyberspacesec/go-snir/pkg/models"
 )
 
 // ChromeNotFoundError signals that chrome is not available

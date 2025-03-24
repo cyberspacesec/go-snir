@@ -2,7 +2,6 @@ package log
 
 import (
 	"context"
-	"io"
 	"log/slog"
 	"os"
 	"time"
@@ -20,7 +19,10 @@ var (
 	})
 
 	// SlogHandler is a slog.Handler that uses our logger
-	SlogHandler = slog.New(&slogToCharm{})
+	SlogHandler = &slogToCharm{}
+
+	// slogLogger is a slog.Logger instance
+	slogLogger = slog.New(SlogHandler)
 )
 
 // EnableDebug enables debug logging
@@ -30,7 +32,17 @@ func EnableDebug() {
 
 // EnableSilence silences all logging
 func EnableSilence() {
-	Logger.SetOutput(io.Discard)
+	Logger.SetLevel(log.ErrorLevel)
+}
+
+// IsDebugEnabled 检查是否启用了调试日志
+func IsDebugEnabled() bool {
+	return Logger.GetLevel() <= log.DebugLevel
+}
+
+// GetLogger returns the slog.Logger instance
+func GetLogger() *slog.Logger {
+	return slogLogger
 }
 
 // Debug logs a debug message
