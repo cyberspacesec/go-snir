@@ -14,7 +14,21 @@ var singleCmd = &cobra.Command{
 	Use:   "single [url]",
 	Short: log.Yellow("扫描单个URL"),
 	Long:  log.Yellow("扫描单个URL并进行截图"),
-	Args:  cobra.ExactArgs(1),
+	Example: `  # 基本用法
+  ./snir scan single example.com
+  
+  # 增加超时和延迟（对于加载慢的网站）
+  ./snir scan single example.com --timeout 60 --delay 3
+  
+  # 保存HTML和HTTP头信息
+  ./snir scan single example.com --save-html --save-headers
+  
+  # 使用代理
+  ./snir scan single example.com --proxy http://127.0.0.1:8080
+  
+  # 执行JavaScript脚本（例如关闭弹窗）
+  ./snir scan single example.com --js "document.querySelectorAll('.popup').forEach(el => el.remove());"`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target := args[0]
 

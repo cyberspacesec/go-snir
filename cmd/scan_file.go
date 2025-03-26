@@ -16,6 +16,20 @@ var fileCmd = &cobra.Command{
 	Use:   "file",
 	Short: log.Yellow("从文件批量扫描URL"),
 	Long:  log.Yellow("从文件中读取URL列表进行批量扫描和截图"),
+	Example: `  # 基本用法
+  ./snir scan file -f urls.txt
+  
+  # 调整并发数进行扫描
+  ./snir scan file -f urls.txt --threads 10
+  
+  # 保存结果为CSV格式
+  ./snir scan file -f urls.txt --write-csv
+  
+  # 修改截图保存目录
+  ./snir scan file -f urls.txt --screenshot-path custom_screenshots
+  
+  # 增加超时和延迟处理慢网站
+  ./snir scan file -f urls.txt --timeout 60 --delay 3`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// 检查文件路径是否提供
 		if opts.Scan.FilePath == "" {

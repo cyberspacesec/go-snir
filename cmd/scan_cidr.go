@@ -14,7 +14,21 @@ var cidrCmd = &cobra.Command{
 	Use:   "cidr [cidr]",
 	Short: log.Yellow("扫描网段"),
 	Long:  log.Yellow("扫描指定CIDR网段中的所有IP地址并进行截图"),
-	Args:  cobra.ExactArgs(1),
+	Example: `  # 基本用法
+  ./snir scan cidr 192.168.1.0/24
+  
+  # 扫描小型网段并增加并发
+  ./snir scan cidr 192.168.1.0/28 --threads 8
+  
+  # 扫描网段并保存结果为CSV
+  ./snir scan cidr 10.0.0.0/24 --write-csv
+  
+  # 指定截图保存目录
+  ./snir scan cidr 172.16.0.0/16 --screenshot-path network_screenshots
+  
+  # 使用更高分辨率截图
+  ./snir scan cidr 192.168.0.0/24 --resolution-x 1920 --resolution-y 1080`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cidr := args[0]
 

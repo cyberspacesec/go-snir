@@ -14,6 +14,28 @@ var scanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: log.Yellow("扫描并截图网站"),
 	Long:  log.Yellow("扫描指定的URL、文件或网段，并对网站进行截图和信息收集"),
+	Example: `  # 基本扫描单个网站
+  ./snir scan example.com
+  
+  # 扫描单个网站并增加超时和延迟
+  ./snir scan example.com --timeout 60 --delay 3
+  
+  # 从文件批量扫描
+  ./snir scan file -f urls.txt
+  
+  # 扫描网段
+  ./snir scan cidr 192.168.1.0/24
+  
+  # 保存HTML内容和HTTP头
+  ./snir scan example.com --save-html --save-headers
+  
+  # 高分辨率截图
+  ./snir scan example.com --resolution-x 1920 --resolution-y 1080
+  
+  # 使用代理
+  ./snir scan example.com --proxy http://127.0.0.1:8080
+  
+  # 更多示例请查看 docs/usage_examples.md`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// 如果直接提供了URL参数，则视为单URL扫描模式
 		if len(args) == 1 {
