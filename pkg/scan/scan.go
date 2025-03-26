@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/cyberspacesec/go-snir/pkg/log"
 	"github.com/cyberspacesec/go-snir/pkg/models"
@@ -97,10 +98,33 @@ func (s *Scanner) ScanSingle(target string) (*models.Result, error) {
 		s.Runner = runner
 	}
 
-	// 执行扫描
-	result, err := s.Driver.Witness(target, s.Runner)
-	if err != nil {
-		return nil, fmt.Errorf("扫描失败: %v", err)
+	// 尝试执行扫描，最多重试指定次数
+	var result *models.Result
+	var lastErr error
+	maxRetries := s.Config.Options.Scan.MaxRetries
+
+	// 至少尝试一次
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			log.Info(fmt.Sprintf("第 %d 次重试扫描", attempt), "url", target)
+			// 重试前等待一小段时间
+			time.Sleep(time.Duration(2*attempt) * time.Second)
+		}
+
+		// 执行扫描
+		result, lastErr = s.Driver.Witness(target, s.Runner)
+
+		// 如果成功或者是特定类型的错误不应重试，则跳出循环
+		if lastErr == nil ||
+			(strings.Contains(lastErr.Error(), "net::ERR_NAME_NOT_RESOLVED") ||
+				strings.Contains(lastErr.Error(), "net::ERR_CONNECTION_REFUSED")) {
+			break
+		}
+	}
+
+	// 如果所有尝试都失败，返回最后一个错误
+	if lastErr != nil {
+		return nil, fmt.Errorf("扫描失败: %v", lastErr)
 	}
 
 	// 运行写入器

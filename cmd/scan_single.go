@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -35,6 +36,28 @@ var singleCmd = &cobra.Command{
 		log.Info("开始扫描", "url", log.Cyan(target))
 		result, err := scanner.ScanSingle(target)
 		if err != nil {
+			// 美化错误消息
+			errMsg := err.Error()
+
+			// 处理常见的ChromeDP错误
+			if strings.Contains(errMsg, "Could not find node with given id") {
+				return fmt.Errorf("扫描过程中发生错误: 无法找到页面上的某个元素。这可能是因为:\n" +
+					"1. 网站加载较慢，请尝试增加超时时间 (--timeout 选项)\n" +
+					"2. 网站可能有反爬虫措施\n" +
+					"3. 网站结构与预期不符\n" +
+					"建议尝试增加延迟: --delay 3")
+			} else if strings.Contains(errMsg, "timeout") {
+				return fmt.Errorf("扫描超时: 无法在指定时间内完成页面加载。请尝试:\n" +
+					"1. 增加超时时间: --timeout 60\n" +
+					"2. 检查网络连接\n" +
+					"3. 检查目标站点是否可访问")
+			} else if strings.Contains(errMsg, "net::ERR_") {
+				return fmt.Errorf("网络错误: 无法连接到目标网站。请检查:\n" +
+					"1. 目标URL是否正确\n" +
+					"2. 您的网络连接\n" +
+					"3. 目标站点是否在线")
+			}
+
 			return fmt.Errorf("扫描失败: %v", err)
 		}
 
