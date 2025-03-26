@@ -8,8 +8,8 @@ import (
 
 var reportCmd = &cobra.Command{
 	Use:   "report",
-	Short: "报告相关命令",
-	Long:  "管理和查看扫描报告的相关命令",
+	Short: log.Yellow("报告相关命令"),
+	Long:  log.Yellow("管理和查看扫描报告的相关命令"),
 }
 
 func init() {
@@ -17,13 +17,13 @@ func init() {
 	rootCmd.AddCommand(reportCmd)
 
 	// 添加报告相关选项
-	reportCmd.PersistentFlags().StringVar(&opts.Report.OutputPath, "output-path", "reports", "报告输出路径")
-	reportCmd.PersistentFlags().StringVar(&opts.Report.Format, "format", "html", "报告格式 (html, json, csv)")
-	reportCmd.PersistentFlags().StringVar(&opts.Report.Host, "host", "127.0.0.1", "Web服务器主机地址")
-	reportCmd.PersistentFlags().IntVar(&opts.Report.Port, "port", 8080, "Web服务器端口")
+	reportCmd.PersistentFlags().StringVar(&opts.Report.OutputPath, "output-path", "reports", log.Cyan("报告输出路径"))
+	reportCmd.PersistentFlags().StringVar(&opts.Report.Format, "format", "html", log.Cyan("报告格式 (html, json, csv)"))
+	reportCmd.PersistentFlags().StringVar(&opts.Report.Host, "host", "127.0.0.1", log.Cyan("Web服务器主机地址"))
+	reportCmd.PersistentFlags().IntVar(&opts.Report.Port, "port", 8080, log.Cyan("Web服务器端口"))
 
 	// 添加serve子命令
 	reportCmd.AddCommand(serveCmd)
 
-	log.Debug("已注册report命令")
+	log.Debug(log.Green("已注册report命令"))
 }

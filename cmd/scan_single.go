@@ -11,8 +11,8 @@ import (
 
 var singleCmd = &cobra.Command{
 	Use:   "single [url]",
-	Short: "扫描单个URL",
-	Long:  "扫描单个URL并进行截图",
+	Short: log.Yellow("扫描单个URL"),
+	Long:  log.Yellow("扫描单个URL并进行截图"),
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		target := args[0]
@@ -31,6 +31,8 @@ var singleCmd = &cobra.Command{
 		defer scanner.Close()
 
 		// 执行扫描
+		log.CommandTitle("扫描URL")
+		log.Info("开始扫描", "url", log.Cyan(target))
 		result, err := scanner.ScanSingle(target)
 		if err != nil {
 			return fmt.Errorf("扫描失败: %v", err)
@@ -45,10 +47,10 @@ var singleCmd = &cobra.Command{
 
 // printResult 打印扫描结果
 func printResult(result interface{}) {
-	log.Info("扫描完成")
+	log.Success("扫描完成")
 }
 
 func init() {
 	scanCmd.AddCommand(singleCmd)
-	log.Debug("已注册single命令")
+	log.Debug(log.Green("已注册single命令"))
 }

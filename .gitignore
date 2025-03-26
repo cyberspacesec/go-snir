@@ -1,6 +1,7 @@
 # 二进制文件
 /go-web-screenshot
 /go-snir
+/snir
 *.exe
 *.exe~
 *.dll
@@ -50,3 +51,17 @@ go.work
 
 # 本地配置文件
 config.local.yaml
+
+# webpage目录相关忽略规则
+/webpage/node_modules/
+/webpage/build/
+/webpage/coverage/
+/webpage/.pnp
+/webpage/.pnp.js
+/webpage/npm-debug.log*
+/webpage/yarn-debug.log*
+/webpage/yarn-error.log*
+/webpage/.env.local
+/webpage/.env.development.local
+/webpage/.env.test.local
+/webpage/.env.production.local

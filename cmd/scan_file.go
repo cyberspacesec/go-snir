@@ -14,8 +14,8 @@ import (
 
 var fileCmd = &cobra.Command{
 	Use:   "file",
-	Short: "从文件批量扫描URL",
-	Long:  "从文件中读取URL列表进行批量扫描和截图",
+	Short: log.Yellow("从文件批量扫描URL"),
+	Long:  log.Yellow("从文件中读取URL列表进行批量扫描和截图"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// 检查文件路径是否提供
 		if opts.Scan.FilePath == "" {
@@ -47,7 +47,7 @@ var fileCmd = &cobra.Command{
 			return fmt.Errorf("文件中没有有效的URL")
 		}
 
-		log.Info("从文件中读取URL", "count", len(urls), "file", opts.Scan.FilePath)
+		log.Info("从文件中读取URL", "count", log.Cyan(fmt.Sprintf("%d", len(urls))), "file", log.Cyan(opts.Scan.FilePath))
 
 		// 创建扫描配置
 		config := &scan.Config{
@@ -63,13 +63,14 @@ var fileCmd = &cobra.Command{
 		defer urlScanner.Close()
 
 		// 执行扫描
-		log.Info("开始批量扫描", "url_count", len(urls))
+		log.CommandTitle("批量扫描")
+		log.Info("开始批量扫描", "url_count", log.Cyan(fmt.Sprintf("%d", len(urls))))
 		err = urlScanner.ScanMulti(urls)
 		if err != nil {
 			return fmt.Errorf("批量扫描失败: %v", err)
 		}
 
-		log.Info("批量扫描完成", "file", opts.Scan.FilePath)
+		log.Success("批量扫描完成", "file", log.Cyan(opts.Scan.FilePath))
 		return nil
 	},
 }
@@ -78,8 +79,8 @@ func init() {
 	scanCmd.AddCommand(fileCmd)
 
 	// 添加文件扫描相关选项
-	fileCmd.Flags().StringVarP(&opts.Scan.FilePath, "file", "f", "", "包含URL列表的文件路径")
+	fileCmd.Flags().StringVarP(&opts.Scan.FilePath, "file", "f", "", log.Cyan("包含URL列表的文件路径"))
 	fileCmd.MarkFlagRequired("file")
 
-	log.Debug("已注册file命令")
+	log.Debug(log.Green("已注册file命令"))
 }

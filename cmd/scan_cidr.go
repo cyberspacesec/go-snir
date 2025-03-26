@@ -12,8 +12,8 @@ import (
 
 var cidrCmd = &cobra.Command{
 	Use:   "cidr [cidr]",
-	Short: "扫描网段",
-	Long:  "扫描指定CIDR网段中的所有IP地址并进行截图",
+	Short: log.Yellow("扫描网段"),
+	Long:  log.Yellow("扫描指定CIDR网段中的所有IP地址并进行截图"),
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cidr := args[0]
@@ -39,7 +39,7 @@ var cidrCmd = &cobra.Command{
 			return fmt.Errorf("网段中没有有效的IP地址")
 		}
 
-		log.Info("从CIDR中解析IP", "count", len(ips), "cidr", cidr)
+		log.Info("从CIDR中解析IP", "count", log.Cyan(fmt.Sprintf("%d", len(ips))), "cidr", log.Cyan(cidr))
 
 		// 创建扫描配置
 		config := &scan.Config{
@@ -55,13 +55,14 @@ var cidrCmd = &cobra.Command{
 		defer scanner.Close()
 
 		// 执行扫描
-		log.Info("开始扫描网段", "cidr", cidr, "ip_count", len(ips))
+		log.CommandTitle("扫描网段")
+		log.Info("开始扫描网段", "cidr", log.Cyan(cidr), "ip_count", log.Cyan(fmt.Sprintf("%d", len(ips))))
 		err = scanner.ScanMulti(ips)
 		if err != nil {
 			return fmt.Errorf("扫描网段失败: %v", err)
 		}
 
-		log.Info("网段扫描完成", "cidr", cidr)
+		log.Success("网段扫描完成", "cidr", log.Cyan(cidr))
 		return nil
 	},
 }
@@ -78,5 +79,5 @@ func inc(ip net.IP) {
 
 func init() {
 	scanCmd.AddCommand(cidrCmd)
-	log.Debug("已注册cidr命令")
+	log.Debug(log.Green("已注册cidr命令"))
 }

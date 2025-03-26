@@ -9,8 +9,8 @@ import (
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "启动Web服务器查看结果",
-	Long:  "启动一个Web服务器，用于查看截图和扫描结果",
+	Short: log.Yellow("启动Web服务器查看结果"),
+	Long:  log.Yellow("启动一个Web服务器，用于查看截图和扫描结果"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// 创建服务器配置
 		serverOptions := report.ServerOptions{
@@ -24,7 +24,8 @@ var serveCmd = &cobra.Command{
 		server := report.NewServer(serverOptions)
 
 		// 启动服务器
-		log.Info("启动Web服务器", "host", opts.Report.Host, "port", opts.Report.Port)
+		log.CommandTitle("启动Web服务器")
+		log.Info("服务器地址", "host", log.Cyan(opts.Report.Host), "port", log.Cyan(opts.Report.Port))
 		return server.Run()
 	},
 }
@@ -33,8 +34,8 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 
 	// 添加服务器选项
-	serveCmd.Flags().StringVar(&opts.Report.Host, "host", "0.0.0.0", "Web服务器监听地址")
-	serveCmd.Flags().IntVar(&opts.Report.Port, "port", 8080, "Web服务器监听端口")
+	serveCmd.Flags().StringVar(&opts.Report.Host, "host", "0.0.0.0", log.Cyan("Web服务器监听地址"))
+	serveCmd.Flags().IntVar(&opts.Report.Port, "port", 8080, log.Cyan("Web服务器监听端口"))
 
-	log.Debug("已注册serve命令")
+	log.Debug(log.Green("已注册serve命令"))
 }

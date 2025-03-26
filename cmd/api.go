@@ -14,7 +14,7 @@ import (
 func generateRandomAPIKey(length int) string {
 	bytes := make([]byte, length/2)
 	if _, err := rand.Read(bytes); err != nil {
-		log.Error("生成API密钥失败", "error", err)
+		log.Error("生成API密钥失败", "error", log.Red(err.Error()))
 		return "go-snir-random-api-key"
 	}
 	return hex.EncodeToString(bytes)
@@ -22,13 +22,13 @@ func generateRandomAPIKey(length int) string {
 
 var apiCmd = &cobra.Command{
 	Use:   "api",
-	Short: "启动API服务",
-	Long:  "启动一个RESTful API服务，用于进行网页截图和信息收集",
+	Short: log.Yellow("启动API服务"),
+	Long:  log.Yellow("启动一个RESTful API服务，用于进行网页截图和信息收集"),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// 如果未指定API密钥，则生成一个随机密钥
 		if opts.API.APIKey == "" {
 			opts.API.APIKey = generateRandomAPIKey(32)
-			log.Info("已生成随机API密钥", "api_key", opts.API.APIKey)
+			log.Success("已生成随机API密钥", "api_key", log.Cyan(opts.API.APIKey))
 		}
 
 		// 创建API服务配置
@@ -52,7 +52,8 @@ var apiCmd = &cobra.Command{
 		server.SetupRoutes()
 
 		// 启动服务
-		log.Info("启动API服务", "host", opts.API.Host, "port", opts.API.Port)
+		log.CommandTitle("启动API服务")
+		log.Info("服务器地址", "host", log.Cyan(opts.API.Host), "port", log.Cyan(opts.API.Port))
 		return server.Run()
 	},
 }
@@ -61,19 +62,19 @@ func init() {
 	rootCmd.AddCommand(apiCmd)
 
 	// 添加API相关选项
-	apiCmd.Flags().StringVar(&opts.API.Host, "host", "0.0.0.0", "API服务监听地址")
-	apiCmd.Flags().IntVar(&opts.API.Port, "port", 8080, "API服务监听端口")
-	apiCmd.Flags().StringVar(&opts.API.APIKey, "api-key", "", "API密钥，用于API鉴权，如不指定则自动生成")
+	apiCmd.Flags().StringVar(&opts.API.Host, "host", "0.0.0.0", log.Cyan("API服务监听地址"))
+	apiCmd.Flags().IntVar(&opts.API.Port, "port", 8080, log.Cyan("API服务监听端口"))
+	apiCmd.Flags().StringVar(&opts.API.APIKey, "api-key", "", log.Cyan("API密钥，用于API鉴权，如不指定则自动生成"))
 
 	// 添加黑名单相关选项
-	apiCmd.Flags().BoolVar(&opts.Scan.EnableBlacklist, "enable-blacklist", true, "启用URL黑名单检查")
-	apiCmd.Flags().BoolVar(&opts.Scan.DefaultBlacklist, "default-blacklist", true, "使用默认黑名单规则")
-	apiCmd.Flags().StringSliceVar(&opts.Scan.BlacklistPatterns, "blacklist-pattern", []string{}, "添加自定义黑名单规则 (可多次使用)")
-	apiCmd.Flags().StringVar(&opts.Scan.BlacklistFile, "blacklist-file", "", "黑名单规则文件路径")
+	apiCmd.Flags().BoolVar(&opts.Scan.EnableBlacklist, "enable-blacklist", true, log.Cyan("启用URL黑名单检查"))
+	apiCmd.Flags().BoolVar(&opts.Scan.DefaultBlacklist, "default-blacklist", true, log.Cyan("使用默认黑名单规则"))
+	apiCmd.Flags().StringSliceVar(&opts.Scan.BlacklistPatterns, "blacklist-pattern", []string{}, log.Cyan("添加自定义黑名单规则 (可多次使用)"))
+	apiCmd.Flags().StringVar(&opts.Scan.BlacklistFile, "blacklist-file", "", log.Cyan("黑名单规则文件路径"))
 
 	// 添加并发控制相关选项
-	apiCmd.Flags().IntVar(&opts.API.MaxConcurrent, "max-concurrent", 10, "最大并发请求数")
-	apiCmd.Flags().IntVar(&opts.API.QueueSize, "queue-size", 100, "请求队列大小")
+	apiCmd.Flags().IntVar(&opts.API.MaxConcurrent, "max-concurrent", 10, log.Cyan("最大并发请求数"))
+	apiCmd.Flags().IntVar(&opts.API.QueueSize, "queue-size", 100, log.Cyan("请求队列大小"))
 
-	log.Debug("已注册api命令")
+	log.Debug(log.Green("已注册api命令"))
 }
