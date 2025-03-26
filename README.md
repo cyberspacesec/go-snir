@@ -93,6 +93,25 @@ go-web-screenshot scan nmap -f scan.xml
 go-web-screenshot report serve
 ```
 
+## 详细使用示例
+
+工具的选项很多，可能会让新用户感到困惑。我们提供了一系列常见使用场景的示例，您可以直接复制使用：
+
+- [常见使用示例文档](docs/usage_examples.md) - 包含了基础扫描、批量扫描、结果输出和高级使用的各种示例
+
+下面是最常用的几个简单例子：
+
+```bash
+# 扫描单个网站（最简单用法）
+./snir scan example.com
+
+# 批量扫描文件中的网站
+./snir scan file -f urls.txt
+
+# 对加载较慢的网站增加超时和延迟
+./snir scan slow-website.com --timeout 60 --delay 3
+```
+
 ## 配置选项
 
 可以通过命令行参数自定义工具的行为：
