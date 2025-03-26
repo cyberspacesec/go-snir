@@ -12,9 +12,89 @@ builds:
       - linux
       - windows
       - darwin
+      - freebsd
+      - openbsd
+      - netbsd
+      - dragonfly
+      - solaris
     goarch:
       - amd64
+      - 386
       - arm64
+      - arm
+      - ppc64
+      - ppc64le
+      - mips
+      - mipsle
+      - mips64
+      - mips64le
+      - s390x
+      - riscv64
+    goarm:
+      - 5
+      - 6
+      - 7
+    # 忽略不支持的平台组合
+    ignore:
+      - goos: darwin
+        goarch: 386
+      - goos: darwin
+        goarch: arm
+      - goos: darwin
+        goarch: ppc64
+      - goos: darwin
+        goarch: ppc64le
+      - goos: darwin
+        goarch: mips
+      - goos: darwin
+        goarch: mipsle
+      - goos: darwin
+        goarch: mips64
+      - goos: darwin
+        goarch: mips64le
+      - goos: darwin
+        goarch: s390x
+      - goos: darwin
+        goarch: riscv64
+      - goos: windows
+        goarch: arm
+        goarm: 5
+      - goos: windows
+        goarch: ppc64
+      - goos: windows
+        goarch: ppc64le
+      - goos: windows
+        goarch: mips
+      - goos: windows
+        goarch: mipsle
+      - goos: windows
+        goarch: mips64
+      - goos: windows
+        goarch: mips64le
+      - goos: windows
+        goarch: s390x
+      - goos: windows
+        goarch: riscv64
+      - goos: solaris
+        goarch: 386
+      - goos: solaris
+        goarch: arm
+      - goos: solaris
+        goarch: arm64
+      - goos: solaris
+        goarch: ppc64
+      - goos: solaris
+        goarch: ppc64le
+      - goos: solaris
+        goarch: mips
+      - goos: solaris
+        goarch: mipsle
+      - goos: solaris
+        goarch: mips64
+      - goos: solaris
+        goarch: mips64le
+      - goos: solaris
+        goarch: riscv64
     ldflags:
       - -s -w
       - -X github.com/cyberspacesec/go-snir/pkg/ascii.version={{.Version}}
@@ -42,6 +122,7 @@ archives:
     files:
       - README.md
       - LICENSE*
+      - docs/*
 
 checksum:
   name_template: 'checksums.txt'
