@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -94,4 +95,32 @@ func inc(ip net.IP) {
 func init() {
 	scanCmd.AddCommand(cidrCmd)
 	log.Debug(log.Green("已注册cidr命令"))
+
+	// 自定义帮助输出，为示例部分添加颜色
+	defaultHelpFunc := cidrCmd.HelpFunc()
+	cidrCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		// 保存原始示例
+		originalExample := cmd.Example
+
+		// 为示例添加颜色
+		coloredExample := ""
+		lines := strings.Split(originalExample, "\n")
+		for _, line := range lines {
+			// 为示例添加颜色
+			if strings.HasPrefix(line, "  #") {
+				coloredExample += log.Cyan(line) + "\n"
+			} else if strings.HasPrefix(line, "  ./snir") {
+				coloredExample += log.Yellow(line) + "\n"
+			} else {
+				coloredExample += line + "\n"
+			}
+		}
+		cmd.Example = coloredExample
+
+		// 调用默认帮助函数
+		defaultHelpFunc(cmd, args)
+
+		// 恢复原始示例
+		cmd.Example = originalExample
+	})
 }

@@ -96,5 +96,33 @@ func init() {
 	fileCmd.Flags().StringVarP(&opts.Scan.FilePath, "file", "f", "", log.Cyan("包含URL列表的文件路径"))
 	fileCmd.MarkFlagRequired("file")
 
+	// 自定义帮助输出，为示例部分添加颜色
+	defaultHelpFunc := fileCmd.HelpFunc()
+	fileCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		// 保存原始示例
+		originalExample := cmd.Example
+
+		// 为示例添加颜色
+		coloredExample := ""
+		lines := strings.Split(originalExample, "\n")
+		for _, line := range lines {
+			// 为示例添加颜色
+			if strings.HasPrefix(line, "  #") {
+				coloredExample += log.Cyan(line) + "\n"
+			} else if strings.HasPrefix(line, "  ./snir") {
+				coloredExample += log.Yellow(line) + "\n"
+			} else {
+				coloredExample += line + "\n"
+			}
+		}
+		cmd.Example = coloredExample
+
+		// 调用默认帮助函数
+		defaultHelpFunc(cmd, args)
+
+		// 恢复原始示例
+		cmd.Example = originalExample
+	})
+
 	log.Debug(log.Green("已注册file命令"))
 }

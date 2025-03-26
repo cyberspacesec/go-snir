@@ -99,6 +99,34 @@ func init() {
 	// 添加scan命令到根命令
 	rootCmd.AddCommand(scanCmd)
 
+	// 自定义帮助输出，为示例部分添加颜色
+	defaultHelpFunc := scanCmd.HelpFunc()
+	scanCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		// 保存原始示例
+		originalExample := cmd.Example
+
+		// 为示例添加颜色
+		coloredExample := ""
+		lines := strings.Split(originalExample, "\n")
+		for _, line := range lines {
+			// 为示例添加颜色
+			if strings.HasPrefix(line, "  #") {
+				coloredExample += log.Cyan(line) + "\n"
+			} else if strings.HasPrefix(line, "  ./snir") {
+				coloredExample += log.Yellow(line) + "\n"
+			} else {
+				coloredExample += line + "\n"
+			}
+		}
+		cmd.Example = coloredExample
+
+		// 调用默认帮助函数
+		defaultHelpFunc(cmd, args)
+
+		// 恢复原始示例
+		cmd.Example = originalExample
+	})
+
 	// 添加通用的截图选项
 	scanCmd.PersistentFlags().StringVar(&opts.Scan.ScreenshotPath, "screenshot-path", "screenshots", log.Cyan("截图保存路径"))
 	scanCmd.PersistentFlags().StringVar(&opts.Scan.ScreenshotFormat, "screenshot-format", "png", log.Cyan("截图格式 (png或jpeg)"))
