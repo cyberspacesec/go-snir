@@ -1,5 +1,7 @@
 # This is an example .goreleaser.yml file with some sensible defaults.
 # Make sure to check the documentation at https://goreleaser.com
+version: 2
+
 before:
   hooks:
     # You may remove this if you don't use go modules.
@@ -100,14 +102,13 @@ builds:
       - -X github.com/cyberspacesec/go-snir/pkg/ascii.version={{.Version}}
       - -X github.com/cyberspacesec/go-snir/pkg/ascii.commit={{.Commit}}
       - -X github.com/cyberspacesec/go-snir/pkg/ascii.buildDate={{.Date}}
-      - -X github.com/cyberspacesec/go-snir/pkg/ascii.buildTime={{.Time}}
+      - -X github.com/cyberspacesec/go-snir/pkg/ascii.buildTime={{.Env.BUILD_TIME}}
     binary: snir
     main: .
     id: "snir"
     
 archives:
-  - format: tar.gz
-    # this name template makes the OS and Arch compatible with the results of uname.
+  - id: default
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_
@@ -115,10 +116,11 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
-    # use zip for windows archives
+    formats:
+      - tar.gz
     format_overrides:
-    - goos: windows
-      format: zip
+      - goos: windows
+        format: zip
     files:
       - README.md
       - LICENSE*
@@ -140,7 +142,7 @@ changelog:
       
 brews:
   - name: snir
-    tap:
+    repository:
       owner: cyberspacesec
       name: homebrew-tap
     homepage: "https://github.com/cyberspacesec/go-snir"

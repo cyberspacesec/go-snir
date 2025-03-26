@@ -20,6 +20,9 @@
 /vendor/
 /Godeps/
 
+# GoReleaser 构建目录
+/dist/
+
 # IDE 和编辑器文件
 .idea/
 .vscode/
