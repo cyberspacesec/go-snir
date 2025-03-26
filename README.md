@@ -25,9 +25,40 @@ go build
 
 ### 使用Docker
 
+#### 使用预构建镜像
+
 ```bash
 docker pull cyberspacesec/go-web-screenshot
 docker run -it --rm cyberspacesec/go-web-screenshot scan single https://example.com
+```
+
+#### 使用项目中的Dockerfile构建
+
+```bash
+# 构建镜像
+docker build -t go-snir .
+
+# 运行容器 - Web服务模式
+docker run -p 8080:8080 -it --rm go-snir
+
+# 运行容器 - 扫描单个URL
+docker run -it --rm go-snir scan single -u https://example.com
+
+# 运行容器 - 指定输出目录
+docker run -v $(pwd)/data:/app/data -it --rm go-snir scan file -f /app/data/urls.txt
+```
+
+#### 使用Docker Compose
+
+```bash
+# 启动服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
 ```
 
 ## 使用方法

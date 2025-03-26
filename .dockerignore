@@ -1,0 +1,31 @@
+# 版本控制
+.git
+.gitignore
+.github
+
+# 构建输出
+dist
+snir
+go-snir
+
+# 开发工具配置
+.vscode
+.idea
+
+# 测试文件
+*_test.go
+coverage.*
+
+# 已有的输出数据
+data/
+screenshots/
+
+# 其他无关文件
+*.md
+!README.md
+LICENSE
+docs/
+
+# 本地配置
+.env
+*.log 

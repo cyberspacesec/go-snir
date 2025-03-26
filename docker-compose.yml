@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  snir:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: go-snir
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    command: ["serve"]
+    # 如果需要自定义命令，可以取消下面的注释并修改
+    # command: ["scan", "single", "-u", "example.com"] 

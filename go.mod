@@ -1,6 +1,8 @@
 module github.com/cyberspacesec/go-snir
 
-go 1.23.2
+go 1.23.0
+
+toolchain go1.23.2
 
 require (
 	github.com/charmbracelet/glamour v0.8.0
